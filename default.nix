@@ -51,14 +51,29 @@
   Additional overlays where you can override system and haskell packages.
   */
   , overlays ? []
+
+  /*
+  :: String
+
+  Name of compiler field e.x. ghc883
+  */
+  , compiler ? "ghc883"
 }:
 let
   pkgs = nixpkgs { inherit system overlays; config = projectConfig; };
   lib  = pkgs.haskell.lib;
   projectConfig = {
-    packageOverrides = new: rec {
-      haskellPackages = new.haskellPackages.override { overrides = haskOverrides; };
+    packageOverrides = super: let self = super.pkgs; in
+    {
+      haskell = super.haskell // {
+        packages = super.haskell.packages // {
+          "${compiler}" = super.haskell.packages."${compiler}".override {
+            overrides = haskOverrides;
+          };
+        };
+      };
     };
+
     allowBroken = true;
     allowUnfree = true;
   } // config;
@@ -77,8 +92,8 @@ let
   haskOverrides = new: old: projectPkgs new // overridesDir new old;
   projectPkgs = new: builtins.mapAttrs (name: src: new.callCabal2nix name (ignore src) {}) packages;
   overridesDir = new: old: if derivationsDir != null then lib.packagesFromDirectory { directory = derivationsDir; } new old else {};
-  outPackages = builtins.mapAttrs (name: _: pkgs.haskellPackages."${name}") packages;
-  shell = pkgs.haskellPackages.shellFor {
+  outPackages = builtins.mapAttrs (name: _: pkgs.haskell.packages."${compiler}"."${name}") packages;
+  shell = pkgs.haskell.packages."${compiler}".shellFor {
     nativeBuildInputs = shellTools pkgs;
     packages = _: pkgs.lib.attrValues outPackages;
   };
