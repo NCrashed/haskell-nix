@@ -49,6 +49,8 @@
   :: [Overlay]
 
   Additional overlays where you can override system and haskell packages.
+
+  Note: wrap with `()` import of overlay nix file either you will get `infinite recusion encountered`
   */
   , overlays ? []
 
