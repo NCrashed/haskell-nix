@@ -18,7 +18,7 @@ let
   project = import ((nixpkgs {}).fetchFromGitHub {
     owner = "NCrashed";
     repo = "haskell-nix";
-    rev = "b1fcade2695a48ef7cff2833b9d0c5662de70dbb";
+    rev = "0c1c27a22daa78d359d7704448e4c6e2512cde5d";
     sha256  = "1vnbi1g6yswq5vb1fqjmh2mdnzynka2v17rnyh9j170xnza3crg2";
   }) { inherit nixpkgs; };
 in project {
