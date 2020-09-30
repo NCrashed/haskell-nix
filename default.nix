@@ -22,7 +22,7 @@
     packages ? { } # :: { <package name> :: Path }
 
   /*
-  :: [Package]
+  :: nixpkgs -> [Package]
 
   List of packages to bring in scope while in nix shell. Example:
   ```
@@ -37,6 +37,18 @@
   Default is cabal and ghcid.
   */
   , shellTools ? (pkgs: with pkgs.haskellPackages; [cabal-install ghcid] )
+
+  /*
+  :: nixpkgs -> script
+
+  Shell hook text that is executed on enter to nix shell. Example:
+  ```
+  shellHook = pkgs: ''
+    echo "Welcome to our dev environment!"
+  '';
+  ```
+  */
+  , shellHook ? (pkgs: "")
 
   /*
   :: Maybe Path
@@ -55,6 +67,16 @@
   , overlays ? []
 
   /*
+  :: [Overlay]
+
+  Overlays that are applied after the project packages overlay. That allows to
+  modify local packages.
+
+  Note: wrap with `()` import of overlay nix file either you will get `infinite recusion encountered`
+  */
+  , overlaysAfter ? []
+
+  /*
   :: String
 
   Name of compiler field e.x. ghc883
@@ -62,20 +84,12 @@
   , compiler ? "ghc883"
 }:
 let
-  pkgs = nixpkgs { inherit system overlays; config = projectConfig; };
+  pkgs = nixpkgs { inherit system; config = projectConfig; overlays = projectOverlays; };
   lib  = pkgs.haskell.lib;
+  ghc-override = import ./lib/ghc-override.nix;
+  projectOverlays = overlays ++ [projectOverlay] ++ overlaysAfter;
+  projectOverlay = self: super: ghc-override compiler haskOverrides super;
   projectConfig = {
-    packageOverrides = super: let self = super.pkgs; in
-    {
-      haskell = super.haskell // {
-        packages = super.haskell.packages // {
-          "${compiler}" = super.haskell.packages."${compiler}".override {
-            overrides = haskOverrides;
-          };
-        };
-      };
-    };
-
     allowBroken = true;
     allowUnfree = true;
   } // config;
@@ -98,6 +112,7 @@ let
   shell = pkgs.haskell.packages."${compiler}".shellFor {
     nativeBuildInputs = shellTools pkgs;
     packages = _: pkgs.lib.attrValues outPackages;
+    shellHook = shellHook pkgs;
   };
 in {
   inherit pkgs shell;
