@@ -82,6 +82,13 @@
   Name of compiler field e.x. ghc883
   */
   , compiler ? "ghc883"
+
+  /*
+  :: Bool
+
+  withHoogle flag
+  */
+  , withHoogle ? false
 }:
 let
   pkgs = nixpkgs { inherit system; config = projectConfig; overlays = projectOverlays; };
@@ -113,6 +120,7 @@ let
     nativeBuildInputs = shellTools pkgs;
     packages = _: pkgs.lib.attrValues outPackages;
     shellHook = shellHook pkgs;
+    withHoogle = withHoogle;
   };
 in {
   inherit pkgs shell;
