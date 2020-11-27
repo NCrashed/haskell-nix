@@ -89,6 +89,16 @@
   withHoogle flag
   */
   , withHoogle ? false
+
+  /*
+    Anything that will be passed into final nix expression on top level
+  */
+  , passthru ? { }
+  /*
+    Anything that will be passed into final nix expression in packages field.
+    Can be used to pass external packages.
+  */
+  , passthruPackages ? { }
 }:
 let
   pkgs = nixpkgs { inherit system; config = projectConfig; overlays = projectOverlays; };
@@ -124,5 +134,6 @@ let
   };
 in {
   inherit pkgs shell;
-  packages = outPackages;
+  packages = outPackages // passthruPackages;
+  inherit passthru;
 }
